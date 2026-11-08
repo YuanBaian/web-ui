@@ -1,16 +1,41 @@
-name: Docker Image CI
+name: Build Chinese NAS image
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - 'main'
-    tags:
-      - 'v*'
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: webtor-zh-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  docker:
-    uses: webtor-io/.github/.github/workflows/docker-multiarch.yml@main
-    permissions:
-      contents: read
-      packages: write
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Set image name
+        shell: bash
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/webtor-zh" >> "$GITHUB_ENV"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.nas
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

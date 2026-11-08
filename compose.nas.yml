@@ -1,0 +1,21 @@
+services:
+  webtor:
+    image: ghcr.io/yuanbaian/webtor-zh:latest
+    container_name: webtor
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    environment:
+      DOMAIN: "http://192.168.31.120:8085"
+      ADMIN_PASSWORD: "${WEBTOR_ADMIN_PASSWORD:?请设置 WEBTOR_ADMIN_PASSWORD，或替换为原有密码}"
+    volumes:
+      - webtor-data:/data
+      - webtor-pgdata:/pgdata
+      - webtor-storage:/storage
+
+# 在原有 webtor Compose 项目中仅替换 image，可继续使用原数据卷。
+# 新项目部署时先确认这些卷是原卷，避免误以为旧数据丢失。
+volumes:
+  webtor-data:
+  webtor-pgdata:
+  webtor-storage:
